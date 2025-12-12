@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../controllers/cart_controller.dart';
+import '../../models/cart_model.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/loading_widget.dart';
 import '../../utils/helpers.dart';
@@ -96,14 +98,7 @@ class CartScreen extends StatelessWidget {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: item.imageBase64 != null
-                                    ? Image.memory(
-                                        base64Decode(item.imageBase64!),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            _buildPlaceholder(),
-                                      )
-                                    : _buildPlaceholder(),
+                                child: _buildCartItemImage(item),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -264,6 +259,45 @@ class CartScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Widget _buildCartItemImage(CartItem item) {
+    // PRIORITY: Use Firebase Storage URL (imageUrl) first, fallback to Base64 (legacy)
+    if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: item.imageUrl!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: (context, url) => Container(
+          color: Colors.grey.shade100,
+          child: Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) => _buildPlaceholder(),
+      );
+    }
+    
+    // Legacy: Base64 fallback for old cart items
+    if (item.imageBase64 != null && item.imageBase64!.isNotEmpty) {
+      try {
+        return Image.memory(
+          base64Decode(item.imageBase64!),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+        );
+      } catch (e) {
+        return _buildPlaceholder();
+      }
+    }
+    
+    return _buildPlaceholder();
   }
 
   Widget _buildPlaceholder() {

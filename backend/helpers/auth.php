@@ -9,7 +9,19 @@
  * Get Firebase ID Token from Authorization header
  */
 function getAuthToken() {
-    $headers = getallheaders();
+    // Try to get headers (getallheaders() may not be available in all PHP environments)
+    $headers = [];
+    if (function_exists('getallheaders')) {
+        $headers = getallheaders();
+    } else {
+        // Fallback: manually extract headers from $_SERVER
+        foreach ($_SERVER as $key => $value) {
+            if (strpos($key, 'HTTP_') === 0) {
+                $headerName = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
+                $headers[$headerName] = $value;
+            }
+        }
+    }
     
     // Check for Authorization header
     if (isset($headers['Authorization'])) {
@@ -20,9 +32,17 @@ function getAuthToken() {
         }
     }
     
-    // Fallback: check for Authorization in $_SERVER
+    // Fallback: check for Authorization in $_SERVER (for nginx and other servers)
     if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
         $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+        if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            return $matches[1];
+        }
+    }
+    
+    // Additional fallback: check REDIRECT_HTTP_AUTHORIZATION (for some server configs)
+    if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
         if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
             return $matches[1];
         }

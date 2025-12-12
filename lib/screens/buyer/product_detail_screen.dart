@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../controllers/product_controller.dart';
@@ -64,15 +65,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           height: 350,
                           width: double.infinity,
                           color: Colors.grey.shade100,
-                          child: product.imageBase64 != null &&
-                                  product.imageBase64!.isNotEmpty
-                              ? Image.memory(
-                                  base64Decode(product.imageBase64!),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
-                                      _buildPlaceholder(),
-                                )
-                              : _buildPlaceholder(),
+                          child: _buildProductImage(),
                         ),
                         // Back button
                         Positioned(
@@ -390,6 +383,48 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildProductImage() {
+    final product = context.read<ProductController>().selectedProduct;
+    if (product == null) return _buildPlaceholder();
+    
+    // PRIORITY: Use Firebase Storage URL (imageUrl) first, fallback to Base64 (legacy)
+    if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: product.imageUrl!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: (context, url) => Container(
+          color: Colors.grey.shade100,
+          child: Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            ),
+          ),
+        ),
+        errorWidget: (context, url, error) => _buildPlaceholder(),
+      );
+    }
+    
+    // Legacy: Base64 fallback for old products
+    if (product.imageBase64 != null && product.imageBase64!.isNotEmpty) {
+      try {
+        return Image.memory(
+          base64Decode(product.imageBase64!),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+        );
+      } catch (e) {
+        return _buildPlaceholder();
+      }
+    }
+    
+    return _buildPlaceholder();
   }
 
   Widget _buildPlaceholder() {

@@ -32,6 +32,7 @@ try {
 
     // Insert product
     // Support both image_url (Firebase Storage) and image_base64 (legacy)
+    // Note: sale_end_date is optional and will be added to schema if needed
     $query = "INSERT INTO products (seller_id, category_id, name, description, price, stock_quantity, image_base64, image_url) 
               VALUES (:seller_id, :category_id, :name, :description, :price, :stock_quantity, :image_base64, :image_url)";
     
@@ -67,7 +68,7 @@ try {
         $getStmt->bindParam(":id", $productId);
         $getStmt->execute();
         
-        $product = $getStmt->fetch();
+        $product = $getStmt->fetch(PDO::FETCH_ASSOC);
         
         sendSuccess($product, "Product added successfully", 201);
     } else {

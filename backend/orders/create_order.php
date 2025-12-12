@@ -176,7 +176,7 @@ try {
     $getStmt->bindParam(":id", $createdOrders[0]);
     $getStmt->execute();
     
-    $order = $getStmt->fetch();
+    $order = $getStmt->fetch(PDO::FETCH_ASSOC);
     
     // Get order items
     $itemsQuery = "SELECT * FROM order_items WHERE order_id = :order_id";
@@ -184,7 +184,7 @@ try {
     $itemsStmt->bindParam(":order_id", $createdOrders[0]);
     $itemsStmt->execute();
     
-    $order['items'] = $itemsStmt->fetchAll();
+    $order['items'] = $itemsStmt->fetchAll(PDO::FETCH_ASSOC);
 
     sendSuccess($order, "Order placed successfully", 201);
 } catch (Exception $e) {
