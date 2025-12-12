@@ -39,8 +39,8 @@ try {
     $id = sanitize($data['id']);
     $status = sanitize($data['status']);
 
-    // Get current order status
-    $currentQuery = "SELECT status FROM orders WHERE id = :id";
+    // Get current order details (including seller_id and buyer_id for permission check)
+    $currentQuery = "SELECT status, seller_id, buyer_id FROM orders WHERE id = :id";
     $currentStmt = $db->prepare($currentQuery);
     $currentStmt->bindParam(":id", $id);
     $currentStmt->execute();
