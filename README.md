@@ -95,14 +95,31 @@ act5/
 
 ### 1. Firebase Setup
 
-1. Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Email/Password authentication
-3. Add Android app and download `google-services.json`
-4. Add iOS app and download `GoogleService-Info.plist`
-5. Place files in respective platform directories
+#### Quick Setup (Recommended)
+1. **Create .env file:**
+   ```bash
+   # Windows
+   copy .env.template .env
+   
+   # Mac/Linux
+   cp .env.template .env
+   ```
 
-**Android:** `android/app/google-services.json`
-**iOS:** `ios/Runner/GoogleService-Info.plist`
+2. **Get Firebase Web Config:**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Project Settings > General > Your apps > Web app
+   - Copy config values to `.env` file
+
+3. **For Android/iOS (if needed):**
+   - Download `google-services.json` → `android/app/google-services.json`
+   - Download `GoogleService-Info.plist` → `ios/Runner/GoogleService-Info.plist`
+   - Extract values from these files to `.env`
+
+4. **Enable Authentication:**
+   - Firebase Console > Authentication > Sign-in method
+   - Enable Email/Password
+
+**📚 For detailed instructions, see [Firebase Setup Guide](docs/FIREBASE_SETUP.md)**
 
 ### 2. Database Setup
 
@@ -144,14 +161,26 @@ act5/
    static const String baseUrl = 'http://192.168.1.x/ecommerce_api';
    ```
 
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    flutter pub get
    ```
+   
+   This installs `flutter_dotenv` for secure environment variable management.
 
-3. Run the app:
+3. **Run the app:**
    ```bash
-   flutter run
+   # Web (lightweight, no Android Studio needed)
+   flutter run -d chrome
+   
+   # Or build for web
+   flutter build web
+   
+   # Android
+   flutter run -d android
+   
+   # iOS
+   flutter run -d ios
    ```
 
 ## API Endpoints

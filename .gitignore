@@ -1,10 +1,28 @@
 # -------------------------
+# Node.js / npm / pnpm
+# -------------------------
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -------------------------
+# Firebase / Build output
+# -------------------------
+/dist/
+/build/
+/functions/node_modules/
+/firebase-debug.log
+.firebase/
+
+# -------------------------
 # Flutter / Dart
 # -------------------------
-
 # Build output
 /build/
-/coverage/
+.coverage/
 
 # Generated files
 .dart_tool/
@@ -34,7 +52,6 @@ app.*.symbols
 # -------------------------
 # IDEs
 # -------------------------
-
 # VS Code
 .vscode/
 
@@ -61,17 +78,18 @@ migrate_working_dir/
 # -------------------------
 # Firebase & Secrets
 # -------------------------
-
 # Do NOT commit Firebase service account keys or Google info plist/json files with sensitive data
-# (replace with your own local dev versions)
 firebase_service_account.json
 google-services.json
 GoogleService-Info.plist
 
+# Firebase config files (keep local only)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
 # -------------------------
 # Local Environment / Database
 # -------------------------
-
 # XAMPP / MySQL / Local DB backups
 *.env
 

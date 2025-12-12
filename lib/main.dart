@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
@@ -13,6 +14,14 @@ import 'controllers/order_controller.dart';
 /// Main Entry Point
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables from .env file
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint('Warning: .env file not found. Make sure to create .env from .env.template');
+    // Continue anyway - values will be empty strings
+  }
 
   // Initialize Firebase
   await Firebase.initializeApp(

@@ -36,6 +36,10 @@ Before you begin, ensure you have the following installed:
 3. Download `GoogleService-Info.plist`
 4. Place it in `ios/Runner/` directory
 
+### Web
+swiftcart-b37bc
+
+
 ### 1.5 Generate Firebase Options
 Run the FlutterFire CLI:
 ```bash
