@@ -11,8 +11,8 @@ dependencies:
     sdk: flutter
 
   # Firebase
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.16.0
+  firebase_core: ^4.2.1
+  firebase_auth: ^6.1.2
 
   # HTTP & Networking
   http: ^1.1.0
@@ -31,7 +31,7 @@ dependencies:
   image_picker: ^1.0.7
   
   # Form & Input
-  intl: ^0.18.1
+  intl: ^0.20.2
   
   # Local Storage
   shared_preferences: ^2.2.2
