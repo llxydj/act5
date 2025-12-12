@@ -1,0 +1,83 @@
+# -------------------------
+# Flutter / Dart
+# -------------------------
+
+# Build output
+/build/
+/coverage/
+
+# Generated files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# Flutter iOS specific
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+
+# Flutter Android specific
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+
+# Obfuscation / Symbolication
+app.*.map.json
+app.*.symbols
+
+# Documentation
+**/doc/api/
+
+# -------------------------
+# IDEs
+# -------------------------
+
+# VS Code
+.vscode/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Misc
+*.log
+*.class
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# -------------------------
+# Firebase & Secrets
+# -------------------------
+
+# Do NOT commit Firebase service account keys or Google info plist/json files with sensitive data
+# (replace with your own local dev versions)
+firebase_service_account.json
+google-services.json
+GoogleService-Info.plist
+
+# -------------------------
+# Local Environment / Database
+# -------------------------
+
+# XAMPP / MySQL / Local DB backups
+*.env
+
+# -------------------------
+# Optional / Editor Temp
+# -------------------------
+*.tmp
+*.swp
+*.lock
