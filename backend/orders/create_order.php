@@ -7,6 +7,7 @@
 require_once '../config/cors.php';
 require_once '../config/database.php';
 require_once '../helpers/response.php';
+require_once '../helpers/auth.php';
 
 // Only allow POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -17,36 +18,69 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $data = getJsonInput();
 
 // Validate required fields
-validateRequired($data, ['buyer_id', 'buyer_name', 'buyer_email', 'shipping_address', 'total_amount', 'items']);
+validateRequired($data, ['shipping_address', 'items']);
 
-if (empty($data['items']) || !is_array($data['items'])) {
-    sendError("Order must have at least one item", 400);
-}
-
+// SECURITY FIX: Get buyer info from authenticated user, not from client
 try {
     $database = new Database();
     $db = $database->getConnection();
+    
+    // Require authentication - user must be a buyer
+    $user = requireRole($db, ['buyer', 'admin']); // Admin can also create orders for testing
+    $buyer_id = $user['id'];
+    $buyer_name = $user['name'];
+    $buyer_email = $user['email'];
+
+    if (empty($data['items']) || !is_array($data['items'])) {
+        sendError("Order must have at least one item", 400);
+    }
     
     // Begin transaction
     $db->beginTransaction();
 
     // Group items by product's seller
+    // CRITICAL SECURITY FIX: Fetch prices from database, don't trust client
     $itemsBySeller = [];
     
     foreach ($data['items'] as $item) {
-        // Get product's seller
-        $productQuery = "SELECT seller_id FROM products WHERE id = :product_id";
+        // Get product details including price and seller
+        $productQuery = "SELECT id, seller_id, name, price, stock_quantity, image_base64, image_url 
+                        FROM products WHERE id = :product_id AND is_active = 1";
         $productStmt = $db->prepare($productQuery);
         $productStmt->bindParam(":product_id", $item['product_id']);
         $productStmt->execute();
         
-        $product = $productStmt->fetch();
+        $product = $productStmt->fetch(PDO::FETCH_ASSOC);
         if (!$product) {
             $db->rollBack();
-            sendError("Product not found: " . $item['product_id'], 404);
+            sendError("Product not found or inactive: " . $item['product_id'], 404);
         }
         
+        // Validate stock availability
+        $requestedQuantity = (int) $item['quantity'];
+        if ($requestedQuantity <= 0) {
+            $db->rollBack();
+            sendError("Invalid quantity for product: " . $item['product_id'], 400);
+        }
+        
+        if ($product['stock_quantity'] < $requestedQuantity) {
+            $db->rollBack();
+            sendError("Insufficient stock for product: " . $product['name'] . ". Available: " . $product['stock_quantity'], 400);
+        }
+        
+        // SECURITY FIX: Use server-side price, not client-provided price
+        $serverPrice = (float) $product['price'];
         $sellerId = $product['seller_id'];
+        
+        // Override client-provided price with server-side price
+        $item['price'] = $serverPrice;
+        $item['product_name'] = $product['name'];
+        // Use image_url if available, otherwise fall back to image_base64
+        if (empty($item['image_base64']) && !empty($product['image_url'])) {
+            $item['image_url'] = $product['image_url'];
+        } elseif (empty($item['image_base64']) && !empty($product['image_base64'])) {
+            $item['image_base64'] = $product['image_base64'];
+        }
         
         if (!isset($itemsBySeller[$sellerId])) {
             $itemsBySeller[$sellerId] = [];
@@ -70,9 +104,8 @@ try {
         
         $orderStmt = $db->prepare($orderQuery);
         
-        $buyer_id = sanitize($data['buyer_id']);
         $shipping_address = sanitize($data['shipping_address']);
-        $phone = isset($data['phone']) ? sanitize($data['phone']) : null;
+        $phone = isset($data['phone']) ? sanitize($data['phone']) : $user['phone'];
         $notes = isset($data['notes']) ? sanitize($data['notes']) : null;
         
         $orderStmt->bindParam(":buyer_id", $buyer_id);
@@ -91,16 +124,19 @@ try {
 
         // Insert order items
         foreach ($items as $item) {
-            $itemQuery = "INSERT INTO order_items (order_id, product_id, product_name, price, quantity, image_base64) 
-                          VALUES (:order_id, :product_id, :product_name, :price, :quantity, :image_base64)";
+            // Support both image_url and image_base64 for backward compatibility
+            $itemQuery = "INSERT INTO order_items (order_id, product_id, product_name, price, quantity, image_base64, image_url) 
+                          VALUES (:order_id, :product_id, :product_name, :price, :quantity, :image_base64, :image_url)";
             
             $itemStmt = $db->prepare($itemQuery);
             
             $product_id = sanitize($item['product_id']);
             $product_name = sanitize($item['product_name']);
+            // Price is already validated and set from server-side
             $price = (float) $item['price'];
             $quantity = (int) $item['quantity'];
             $image_base64 = isset($item['image_base64']) ? $item['image_base64'] : null;
+            $image_url = isset($item['image_url']) ? sanitize($item['image_url']) : null;
             
             $itemStmt->bindParam(":order_id", $orderId);
             $itemStmt->bindParam(":product_id", $product_id);
@@ -108,13 +144,14 @@ try {
             $itemStmt->bindParam(":price", $price);
             $itemStmt->bindParam(":quantity", $quantity);
             $itemStmt->bindParam(":image_base64", $image_base64);
+            $itemStmt->bindParam(":image_url", $image_url);
             
             if (!$itemStmt->execute()) {
                 $db->rollBack();
                 sendError("Failed to add order item", 500);
             }
 
-            // Update product stock
+            // Update product stock (already validated above)
             $updateStockQuery = "UPDATE products SET stock_quantity = stock_quantity - :quantity WHERE id = :product_id";
             $updateStockStmt = $db->prepare($updateStockQuery);
             $updateStockStmt->bindParam(":quantity", $quantity);

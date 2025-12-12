@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 import '../config/constants.dart';
 
 /// API Response wrapper
@@ -24,12 +25,31 @@ class ApiService {
   ApiService._internal();
 
   final String baseUrl = AppConstants.baseUrl;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Headers
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
+  // Get headers with authentication token
+  Future<Map<String, String>> get _headers async {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    // Add Firebase ID token if user is logged in
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        final token = await user.getIdToken();
+        if (token != null) {
+          headers['Authorization'] = 'Bearer $token';
+        }
+      } catch (e) {
+        // Token retrieval failed, continue without auth header
+        // Some endpoints may not require authentication
+      }
+    }
+    
+    return headers;
+  }
 
   // GET Request
   Future<ApiResponse<dynamic>> get(String endpoint,
@@ -40,7 +60,8 @@ class ApiService {
         uri = uri.replace(queryParameters: queryParams);
       }
 
-      final response = await http.get(uri, headers: _headers);
+      final headers = await _headers;
+      final response = await http.get(uri, headers: headers);
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse(
@@ -56,9 +77,10 @@ class ApiService {
       {Map<String, dynamic>? body}) async {
     try {
       final uri = Uri.parse('$baseUrl$endpoint');
+      final headers = await _headers;
       final response = await http.post(
         uri,
-        headers: _headers,
+        headers: headers,
         body: body != null ? jsonEncode(body) : null,
       );
       return _handleResponse(response);
@@ -76,9 +98,10 @@ class ApiService {
       {Map<String, dynamic>? body}) async {
     try {
       final uri = Uri.parse('$baseUrl$endpoint');
+      final headers = await _headers;
       final response = await http.put(
         uri,
-        headers: _headers,
+        headers: headers,
         body: body != null ? jsonEncode(body) : null,
       );
       return _handleResponse(response);
@@ -95,7 +118,8 @@ class ApiService {
   Future<ApiResponse<dynamic>> delete(String endpoint) async {
     try {
       final uri = Uri.parse('$baseUrl$endpoint');
-      final response = await http.delete(uri, headers: _headers);
+      final headers = await _headers;
+      final response = await http.delete(uri, headers: headers);
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse(

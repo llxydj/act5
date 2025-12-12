@@ -57,9 +57,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (user == null) return;
 
     final success = await orderController.createOrder(
-      buyerId: user.id,
-      buyerName: user.name,
-      buyerEmail: user.email,
       cart: cartController.cart,
       shippingAddress: _addressController.text.trim(),
       phone: _phoneController.text.trim(),

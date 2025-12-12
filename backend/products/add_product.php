@@ -7,6 +7,7 @@
 require_once '../config/cors.php';
 require_once '../config/database.php';
 require_once '../helpers/response.php';
+require_once '../helpers/auth.php';
 
 // Only allow POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -17,35 +18,32 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $data = getJsonInput();
 
 // Validate required fields
-validateRequired($data, ['seller_id', 'name', 'description', 'price', 'stock_quantity']);
+validateRequired($data, ['name', 'description', 'price', 'stock_quantity']);
 
 try {
     $database = new Database();
     $db = $database->getConnection();
 
-    // Verify seller exists
-    $checkQuery = "SELECT id FROM users WHERE id = :seller_id AND role = 'seller'";
-    $checkStmt = $db->prepare($checkQuery);
-    $checkStmt->bindParam(":seller_id", $data['seller_id']);
-    $checkStmt->execute();
-
-    if ($checkStmt->rowCount() === 0) {
-        sendError("Invalid seller ID", 400);
-    }
+    // SECURITY FIX: Require authentication and verify user is a seller
+    $user = requireRole($db, 'seller');
+    
+    // Use authenticated user's ID, ignore client-provided seller_id
+    $seller_id = $user['id'];
 
     // Insert product
-    $query = "INSERT INTO products (seller_id, category_id, name, description, price, stock_quantity, image_base64) 
-              VALUES (:seller_id, :category_id, :name, :description, :price, :stock_quantity, :image_base64)";
+    // Support both image_url (Firebase Storage) and image_base64 (legacy)
+    $query = "INSERT INTO products (seller_id, category_id, name, description, price, stock_quantity, image_base64, image_url) 
+              VALUES (:seller_id, :category_id, :name, :description, :price, :stock_quantity, :image_base64, :image_url)";
     
     $stmt = $db->prepare($query);
     
-    $seller_id = sanitize($data['seller_id']);
     $category_id = isset($data['category_id']) && !empty($data['category_id']) ? sanitize($data['category_id']) : null;
     $name = sanitize($data['name']);
     $description = sanitize($data['description']);
     $price = (float) $data['price'];
     $stock_quantity = (int) $data['stock_quantity'];
     $image_base64 = isset($data['image_base64']) ? $data['image_base64'] : null;
+    $image_url = isset($data['image_url']) ? sanitize($data['image_url']) : null;
     
     $stmt->bindParam(":seller_id", $seller_id);
     $stmt->bindParam(":category_id", $category_id);
@@ -54,6 +52,7 @@ try {
     $stmt->bindParam(":price", $price);
     $stmt->bindParam(":stock_quantity", $stock_quantity);
     $stmt->bindParam(":image_base64", $image_base64);
+    $stmt->bindParam(":image_url", $image_url);
 
     if ($stmt->execute()) {
         $productId = $db->lastInsertId();

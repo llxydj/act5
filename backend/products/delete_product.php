@@ -7,6 +7,7 @@
 require_once '../config/cors.php';
 require_once '../config/database.php';
 require_once '../helpers/response.php';
+require_once '../helpers/auth.php';
 
 // Only allow DELETE
 if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
@@ -21,8 +22,26 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 try {
     $database = new Database();
     $db = $database->getConnection();
-
+    
+    // SECURITY FIX: Verify user owns this product (seller) or is admin
+    $user = requireAuth($db);
     $id = sanitize($_GET['id']);
+    
+    // Check if user owns the product or is admin
+    $checkQuery = "SELECT seller_id FROM products WHERE id = :id";
+    $checkStmt = $db->prepare($checkQuery);
+    $checkStmt->bindParam(":id", $id);
+    $checkStmt->execute();
+    $product = $checkStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$product) {
+        sendError("Product not found", 404);
+    }
+    
+    // Only seller who owns the product or admin can delete
+    if ($product['seller_id'] != $user['id'] && $user['role'] !== 'admin') {
+        sendError("Access denied. You don't have permission to delete this product.", 403);
+    }
 
     // Check if product has pending orders
     $checkQuery = "SELECT COUNT(*) as count FROM order_items oi 

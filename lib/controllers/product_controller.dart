@@ -126,27 +126,30 @@ class ProductController extends ChangeNotifier {
   }
 
   /// Add product
+  /// Note: sellerId is now obtained from authenticated user on backend
   Future<bool> addProduct({
-    required String sellerId,
     required String name,
     required String description,
     required double price,
     required int stockQuantity,
     String? categoryId,
     String? imageBase64,
+    String? imageUrl,
+    DateTime? saleEndDate,
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     final result = await _productService.addProduct(
-      sellerId: sellerId,
       name: name,
       description: description,
       price: price,
       stockQuantity: stockQuantity,
       categoryId: categoryId,
       imageBase64: imageBase64,
+      imageUrl: imageUrl,
+      saleEndDate: saleEndDate,
     );
 
     _isLoading = false;

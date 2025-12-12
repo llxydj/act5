@@ -12,41 +12,31 @@ class OrderService {
   final ApiService _api = ApiService();
 
   /// Create new order
+  /// Note: buyerId, buyerName, buyerEmail are now obtained from authenticated user on backend
   Future<OrderResult> createOrder({
-    required String buyerId,
-    required String buyerName,
-    required String buyerEmail,
     required CartModel cart,
     required String shippingAddress,
     String? phone,
     String? notes,
   }) async {
     try {
-      // Group items by seller
-      final Map<String, List<Map<String, dynamic>>> itemsBySeller = {};
-
-      for (final item in cart.items) {
-        // We need to get seller_id from the product
-        // For simplicity, we'll send all items and let the backend handle grouping
-      }
-
+      // Backend will:
+      // 1. Get buyer info from authenticated user
+      // 2. Fetch product prices from database (security fix)
+      // 3. Group items by seller
+      // 4. Calculate totals server-side
       final response = await _api.post(
         '${AppConstants.ordersEndpoint}/create_order.php',
         body: {
-          'buyer_id': buyerId,
-          'buyer_name': buyerName,
-          'buyer_email': buyerEmail,
           'shipping_address': shippingAddress,
-          'phone': phone,
-          'notes': notes,
-          'total_amount': cart.totalAmount,
+          if (phone != null) 'phone': phone,
+          if (notes != null) 'notes': notes,
           'items': cart.items
               .map((item) => {
                     'product_id': item.productId,
-                    'product_name': item.productName,
-                    'price': item.price,
                     'quantity': item.quantity,
-                    'image_base64': item.imageBase64,
+                    // Note: price, product_name, and image will be fetched from database by backend
+                    // We only send product_id and quantity for security
                   })
               .toList(),
         },

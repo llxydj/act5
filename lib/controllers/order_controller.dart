@@ -32,10 +32,8 @@ class OrderController extends ChangeNotifier {
   }
 
   /// Create order
+  /// Note: buyerId, buyerName, buyerEmail are now obtained from authenticated user on backend
   Future<bool> createOrder({
-    required String buyerId,
-    required String buyerName,
-    required String buyerEmail,
     required CartModel cart,
     required String shippingAddress,
     String? phone,
@@ -46,9 +44,6 @@ class OrderController extends ChangeNotifier {
     notifyListeners();
 
     final result = await _orderService.createOrder(
-      buyerId: buyerId,
-      buyerName: buyerName,
-      buyerEmail: buyerEmail,
       cart: cart,
       shippingAddress: shippingAddress,
       phone: phone,

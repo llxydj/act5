@@ -6,9 +6,11 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/product_controller.dart';
+import '../../services/storage_service.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_dropdown.dart';
+import '../../widgets/custom_date_picker.dart';
 import '../../utils/validators.dart';
 import '../../utils/helpers.dart';
 
@@ -27,8 +29,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
   String? _selectedCategoryId;
-  String? _imageBase64;
+  String? _imageBase64; // Legacy support
+  String? _imageUrl; // Firebase Storage URL
   File? _imageFile;
+  DateTime? _saleEndDate;
+  final StorageService _storageService = StorageService();
 
   @override
   void initState() {
@@ -55,10 +60,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
 
     if (pickedFile != null) {
-      final bytes = await pickedFile.readAsBytes();
       setState(() {
         _imageFile = File(pickedFile.path);
-        _imageBase64 = base64Encode(bytes);
+        _imageBase64 = null; // Clear base64 when using Firebase Storage
+        _imageUrl = null; // Will be set after upload
       });
     }
   }
@@ -66,17 +71,49 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final user = context.read<AuthController>().user;
-    if (user == null) return;
+    // Show loading indicator
+    if (!mounted) return;
+    Helpers.showSnackBar(context, 'Uploading image...', isSuccess: false);
 
+    String? imageUrl = _imageUrl;
+
+    // Upload image to Firebase Storage if image file is selected
+    if (_imageFile != null && imageUrl == null) {
+      try {
+        imageUrl = await _storageService.uploadProductImage(_imageFile!);
+        if (imageUrl == null) {
+          if (!mounted) return;
+          Helpers.showSnackBar(
+            context,
+            'Failed to upload image',
+            isError: true,
+          );
+          return;
+        }
+        setState(() {
+          _imageUrl = imageUrl;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        Helpers.showSnackBar(
+          context,
+          'Failed to upload image: ${e.toString()}',
+          isError: true,
+        );
+        return;
+      }
+    }
+
+    // Add product with Firebase Storage URL (preferred) or Base64 (legacy fallback)
     final success = await context.read<ProductController>().addProduct(
-          sellerId: user.id,
           name: _nameController.text.trim(),
           description: _descriptionController.text.trim(),
           price: double.parse(_priceController.text),
           stockQuantity: int.parse(_stockController.text),
           categoryId: _selectedCategoryId,
-          imageBase64: _imageBase64,
+          imageUrl: imageUrl, // Use Firebase Storage URL
+          imageBase64: imageUrl == null ? _imageBase64 : null, // Legacy fallback
+          saleEndDate: _saleEndDate,
         );
 
     if (!mounted) return;
@@ -240,6 +277,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     });
                   },
                 ),
+              ),
+              const SizedBox(height: 16),
+
+              // Sale End Date Picker
+              CustomDatePicker(
+                selectedDate: _saleEndDate,
+                labelText: 'Sale End Date (Optional)',
+                hintText: 'Select sale end date',
+                prefixIcon: Icons.calendar_today_outlined,
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                onDateSelected: (date) {
+                  setState(() {
+                    _saleEndDate = date;
+                  });
+                },
               ),
               const SizedBox(height: 32),
 

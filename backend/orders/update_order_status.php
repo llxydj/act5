@@ -7,6 +7,7 @@
 require_once '../config/cors.php';
 require_once '../config/database.php';
 require_once '../helpers/response.php';
+require_once '../helpers/auth.php';
 
 // Only allow PUT
 if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
@@ -29,6 +30,9 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
+    // SECURITY FIX: Require authentication
+    $user = requireAuth($db);
+    
     // Begin transaction
     $db->beginTransaction();
 
@@ -41,10 +45,27 @@ try {
     $currentStmt->bindParam(":id", $id);
     $currentStmt->execute();
     
-    $currentOrder = $currentStmt->fetch();
+    $currentOrder = $currentStmt->fetch(PDO::FETCH_ASSOC);
     if (!$currentOrder) {
         $db->rollBack();
         sendError("Order not found", 404);
+    }
+    
+    // SECURITY FIX: Verify user has permission to update this order
+    // Only seller who owns the order, buyer who placed it, or admin can update
+    if ($currentOrder['seller_id'] != $user['id'] && 
+        $currentOrder['buyer_id'] != $user['id'] && 
+        $user['role'] !== 'admin') {
+        $db->rollBack();
+        sendError("Access denied. You don't have permission to update this order.", 403);
+    }
+    
+    // Additional validation: Buyers can only cancel pending orders
+    if ($user['role'] === 'buyer' && $currentOrder['buyer_id'] == $user['id']) {
+        if ($data['status'] !== 'cancelled' && $currentOrder['status'] !== 'pending') {
+            $db->rollBack();
+            sendError("Buyers can only cancel pending orders", 400);
+        }
     }
 
     // Build update query

@@ -68,27 +68,32 @@ class ProductService {
   }
 
   /// Add new product
+  /// Note: sellerId is now obtained from authenticated user on backend
   Future<ProductResult> addProduct({
-    required String sellerId,
     required String name,
     required String description,
     required double price,
     required int stockQuantity,
     String? categoryId,
     String? imageBase64,
+    String? imageUrl,
+    DateTime? saleEndDate,
   }) async {
     try {
+      final body = {
+        'name': name,
+        'description': description,
+        'price': price,
+        'stock_quantity': stockQuantity,
+        if (categoryId != null) 'category_id': categoryId,
+        if (imageBase64 != null) 'image_base64': imageBase64,
+        if (imageUrl != null) 'image_url': imageUrl,
+        if (saleEndDate != null) 'sale_end_date': saleEndDate.toIso8601String(),
+      };
+      
       final response = await _api.post(
         '${AppConstants.productsEndpoint}/add_product.php',
-        body: {
-          'seller_id': sellerId,
-          'name': name,
-          'description': description,
-          'price': price,
-          'stock_quantity': stockQuantity,
-          'category_id': categoryId,
-          'image_base64': imageBase64,
-        },
+        body: body,
       );
 
       if (response.success) {
