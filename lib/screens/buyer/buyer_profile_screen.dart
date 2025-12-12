@@ -291,9 +291,9 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                       onTap: () {
                         showAboutDialog(
                           context: context,
-                          applicationName: 'ShopEase',
+                          applicationName: 'SwiftCart',
                           applicationVersion: '1.0.0',
-                          applicationLegalese: '© 2024 ShopEase',
+                          applicationLegalese: '© 2024 SwiftCart',
                         );
                       },
                     ),

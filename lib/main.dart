@@ -35,12 +35,12 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const ShopEaseApp());
+  runApp(const SwiftCartApp());
 }
 
 /// Main App Widget
-class ShopEaseApp extends StatelessWidget {
-  const ShopEaseApp({super.key});
+class SwiftCartApp extends StatelessWidget {
+  const SwiftCartApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +52,7 @@ class ShopEaseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OrderController()),
       ],
       child: MaterialApp(
-        title: 'ShopEase',
+        title: 'SwiftCart',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         initialRoute: AppRoutes.splash,

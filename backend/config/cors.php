@@ -1,7 +1,7 @@
 <?php
 /**
  * CORS Configuration
- * ShopEase E-Commerce API
+ * SwiftCart E-Commerce API
  */
 
 // Allow from any origin

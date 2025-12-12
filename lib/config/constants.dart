@@ -1,7 +1,7 @@
 /// Application Constants
 class AppConstants {
   // App Info
-  static const String appName = 'ShopEase';
+  static const String appName = 'SwiftCart';
   static const String appVersion = '1.0.0';
 
   // API Configuration - Update this with your XAMPP server IP

@@ -1,7 +1,7 @@
 <?php
 /**
  * Response Helper Functions
- * ShopEase E-Commerce API
+ * SwiftCart E-Commerce API
  */
 
 /**

@@ -132,7 +132,7 @@ class _SplashScreenState extends State<SplashScreen>
                         const SizedBox(height: 32),
                         // App Name
                         const Text(
-                          'ShopEase',
+                          'SwiftCart',
                           style: TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.bold,

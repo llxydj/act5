@@ -1,4 +1,4 @@
-# ShopEase - Mobile E-Commerce Application
+# SwiftCart - Mobile E-Commerce Application
 
 A production-ready mobile e-commerce application built with **Flutter** for Android and iOS platforms, featuring **Firebase Authentication** and **MySQL** database via **PHP REST API**.
 

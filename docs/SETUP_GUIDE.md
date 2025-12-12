@@ -1,6 +1,6 @@
-# ShopEase Setup Guide
+# SwiftCart Setup Guide
 
-This guide provides step-by-step instructions to set up and run the ShopEase e-commerce application.
+This guide provides step-by-step instructions to set up and run the SwiftCart e-commerce application.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ Before you begin, ensure you have the following installed:
 ### 1.1 Create Firebase Project
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Click "Add project" and follow the setup wizard
-3. Name your project (e.g., "ShopEase")
+3. Name your project (e.g., "SwiftCart")
 
 ### 1.2 Enable Email/Password Authentication
 1. In Firebase Console, go to **Authentication** > **Sign-in method**
@@ -232,4 +232,8 @@ For issues or questions, refer to:
 - [Flutter Documentation](https://docs.flutter.dev/)
 - [Firebase Documentation](https://firebase.google.com/docs)
 - [PHP Documentation](https://www.php.net/docs.php)
+
+---
+
+**SwiftCart - Your One-Stop Shop**
 

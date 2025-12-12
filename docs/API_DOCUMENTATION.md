@@ -1,4 +1,4 @@
-# ShopEase API Documentation
+# SwiftCart API Documentation
 
 ## Base URL
 ```

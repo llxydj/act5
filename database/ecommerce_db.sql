@@ -1,5 +1,5 @@
 -- =====================================================
--- ShopEase E-Commerce Database Schema
+-- SwiftCart E-Commerce Database Schema
 -- MySQL Database for phpMyAdmin (XAMPP)
 -- =====================================================
 
