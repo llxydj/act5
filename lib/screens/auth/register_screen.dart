@@ -6,6 +6,7 @@ import '../../controllers/auth_controller.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_dropdown.dart';
+import '../../widgets/custom_date_picker.dart';
 import '../../utils/validators.dart';
 import '../../utils/helpers.dart';
 
@@ -27,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   String? _selectedRole;
+  TimeOfDay? _preferredContactTime;
 
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
@@ -224,6 +226,19 @@ class _RegisterScreenState extends State<RegisterScreen>
                           hintText: 'Enter your address',
                           prefixIcon: Icons.location_on_outlined,
                           maxLines: 2,
+                        ),
+                        const SizedBox(height: 16),
+                        // Preferred Contact Time (Optional)
+                        CustomTimePicker(
+                          selectedTime: _preferredContactTime,
+                          labelText: 'Preferred Contact Time (Optional)',
+                          hintText: 'Select preferred contact time',
+                          prefixIcon: Icons.access_time_outlined,
+                          onTimeSelected: (time) {
+                            setState(() {
+                              _preferredContactTime = time;
+                            });
+                          },
                         ),
                         const SizedBox(height: 16),
                         // Password Field
