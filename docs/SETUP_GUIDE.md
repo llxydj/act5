@@ -77,6 +77,10 @@ This creates all tables, views, stored procedures, and default categories.
 
 ### 3.1 Copy Backend Files
 Copy the `backend` folder to XAMPP's htdocs:
+
+command:
+xcopy "C:\Users\libra\Desktop\act5\backend" "C:\xampp\htdocs\ecommerce_api" /E /I /H
+
 ```
 C:\xampp\htdocs\ecommerce_api
 ```
