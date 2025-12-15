@@ -24,7 +24,8 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  final String baseUrl = AppConstants.baseUrl;
+  // Use getter to always get current platform-specific URL
+  String get baseUrl => AppConstants.baseUrl;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Get headers with authentication token

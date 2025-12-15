@@ -1,14 +1,26 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Application Constants
 class AppConstants {
   // App Info
   static const String appName = 'SwiftCart';
   static const String appVersion = '1.0.0';
 
-  // API Configuration - Update this with your XAMPP server IP
-  // For Android Emulator use: 10.0.2.2
-  // For iOS Simulator use: localhost
-  // For Physical Device use: Your computer's IP address
-  static const String baseUrl = 'http://10.0.2.2/ecommerce_api';
+  // API Configuration - Automatically detects platform
+  // For Web/Chrome: uses localhost
+  // For Android Emulator: uses 10.0.2.2
+  // For iOS Simulator: uses localhost
+  // For Physical Device: Update manually to your computer's IP address
+  static String get baseUrl {
+    if (kIsWeb) {
+      // Web/Chrome - use localhost
+      return 'http://localhost/ecommerce_api';
+    } else {
+      // Mobile platforms - use Android emulator address
+      // For physical devices, change this to your computer's IP (e.g., 'http://192.168.1.XXX/ecommerce_api')
+      return 'http://10.0.2.2/ecommerce_api';
+    }
+  }
 
   // API Endpoints
   static const String usersEndpoint = '/users';
