@@ -14,7 +14,7 @@ yarn-error.log*
 /dist/
 /build/
 /functions/node_modules/
-/firebase-debug.log
+firebase-debug.log
 .firebase/
 
 # -------------------------
@@ -78,20 +78,17 @@ migrate_working_dir/
 # -------------------------
 # Firebase & Secrets
 # -------------------------
-# Do NOT commit Firebase service account keys or Google info plist/json files with sensitive data
+# Do NOT commit Firebase service account keys or Google info plist/json files
 firebase_service_account.json
 google-services.json
 GoogleService-Info.plist
 
-# Firebase config files (keep local only)
+# Local Firebase config files
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 
-# -------------------------
-# Local Environment / Database
-# -------------------------
-# XAMPP / MySQL / Local DB backups
-*.env
+# Environment variables / local config
+.env
 
 # -------------------------
 # Optional / Editor Temp
@@ -99,3 +96,11 @@ ios/Runner/GoogleService-Info.plist
 *.tmp
 *.swp
 *.lock
+
+# -------------------------
+# Generated platform files
+# -------------------------
+/windows/flutter/generated_*
+/linux/flutter/generated_*
+/macos/Flutter/GeneratedPluginRegistrant.swift
+

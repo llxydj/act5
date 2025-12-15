@@ -60,20 +60,22 @@ class _EditProductScreenState extends State<EditProductScreen> {
         _firestoreImageId = product.firestoreImageId;
         _imageBase64 = product.imageBase64; // Legacy fallback
         _isActive = product.isActive;
-        
-        // If we have Firestore image ID, fetch the Base64 for preview
-        if (_firestoreImageId != null && _firestoreImageId!.isNotEmpty) {
-          try {
-            final base64 = await _storageService.getProductImageBase64(_firestoreImageId!);
-            if (base64 != null) {
-              _imageBase64 = base64;
-            }
-          } catch (e) {
-            print('Failed to load image from Firestore: $e');
-          }
-        }
         _isLoading = false;
       });
+      
+      // If we have Firestore image ID, fetch the Base64 for preview
+      if (_firestoreImageId != null && _firestoreImageId!.isNotEmpty) {
+        try {
+          final base64 = await _storageService.getProductImageBase64(_firestoreImageId!);
+          if (base64 != null && mounted) {
+            setState(() {
+              _imageBase64 = base64;
+            });
+          }
+        } catch (e) {
+          print('Failed to load image from Firestore: $e');
+        }
+      }
     } else {
       setState(() => _isLoading = false);
     }
