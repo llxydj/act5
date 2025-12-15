@@ -8,6 +8,7 @@ import '../../controllers/cart_controller.dart';
 import '../../models/cart_model.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/firestore_image_widget.dart';
 import '../../utils/helpers.dart';
 
 /// Cart Screen
@@ -262,7 +263,20 @@ class CartScreen extends StatelessWidget {
   }
 
   Widget _buildCartItemImage(CartItem item) {
-    // PRIORITY: Use Firebase Storage URL (imageUrl) first, fallback to Base64 (legacy)
+    // Priority 1: Firestore Base64 image
+    if (item.firestoreImageId != null && item.firestoreImageId!.isNotEmpty) {
+      return FirestoreImageWidget(
+        firestoreImageId: item.firestoreImageId,
+        imageBase64: item.imageBase64, // Fallback
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: _buildPlaceholder(),
+        errorWidget: _buildPlaceholder(),
+      );
+    }
+    
+    // Priority 2: Legacy Firebase Storage URL
     if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: item.imageUrl!,
@@ -282,7 +296,7 @@ class CartScreen extends StatelessWidget {
       );
     }
     
-    // Legacy: Base64 fallback for old cart items
+    // Priority 3: Legacy Base64 from MySQL
     if (item.imageBase64 != null && item.imageBase64!.isNotEmpty) {
       try {
         return Image.memory(

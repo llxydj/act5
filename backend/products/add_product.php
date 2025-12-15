@@ -31,10 +31,10 @@ try {
     $seller_id = $user['id'];
 
     // Insert product
-    // Support both image_url (Firebase Storage) and image_base64 (legacy)
+    // Support firestore_image_id (Firestore Base64), image_url (Firebase Storage), and image_base64 (legacy)
     // Note: sale_end_date is optional and will be added to schema if needed
-    $query = "INSERT INTO products (seller_id, category_id, name, description, price, stock_quantity, image_base64, image_url) 
-              VALUES (:seller_id, :category_id, :name, :description, :price, :stock_quantity, :image_base64, :image_url)";
+    $query = "INSERT INTO products (seller_id, category_id, name, description, price, stock_quantity, image_base64, image_url, firestore_image_id) 
+              VALUES (:seller_id, :category_id, :name, :description, :price, :stock_quantity, :image_base64, :image_url, :firestore_image_id)";
     
     $stmt = $db->prepare($query);
     
@@ -45,6 +45,7 @@ try {
     $stock_quantity = (int) $data['stock_quantity'];
     $image_base64 = isset($data['image_base64']) ? $data['image_base64'] : null;
     $image_url = isset($data['image_url']) ? sanitize($data['image_url']) : null;
+    $firestore_image_id = isset($data['firestore_image_id']) && !empty($data['firestore_image_id']) ? sanitize($data['firestore_image_id']) : null;
     
     $stmt->bindParam(":seller_id", $seller_id);
     $stmt->bindParam(":category_id", $category_id);
@@ -54,6 +55,7 @@ try {
     $stmt->bindParam(":stock_quantity", $stock_quantity);
     $stmt->bindParam(":image_base64", $image_base64);
     $stmt->bindParam(":image_url", $image_url);
+    $stmt->bindParam(":firestore_image_id", $firestore_image_id);
 
     if ($stmt->execute()) {
         $productId = $db->lastInsertId();

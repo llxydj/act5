@@ -77,6 +77,7 @@ class ProductService {
     String? categoryId,
     String? imageBase64,
     String? imageUrl,
+    String? firestoreImageId,
     DateTime? saleEndDate,
   }) async {
     try {
@@ -88,6 +89,7 @@ class ProductService {
         if (categoryId != null) 'category_id': categoryId,
         if (imageBase64 != null) 'image_base64': imageBase64,
         if (imageUrl != null) 'image_url': imageUrl,
+        if (firestoreImageId != null) 'firestore_image_id': firestoreImageId,
         if (saleEndDate != null) 'sale_end_date': saleEndDate.toIso8601String(),
       };
       
@@ -124,6 +126,7 @@ class ProductService {
     int? stockQuantity,
     String? categoryId,
     String? imageBase64,
+    String? firestoreImageId,
     bool? isActive,
   }) async {
     try {
@@ -134,6 +137,7 @@ class ProductService {
       if (stockQuantity != null) body['stock_quantity'] = stockQuantity;
       if (categoryId != null) body['category_id'] = categoryId;
       if (imageBase64 != null) body['image_base64'] = imageBase64;
+      if (firestoreImageId != null) body['firestore_image_id'] = firestoreImageId;
       if (isActive != null) body['is_active'] = isActive ? 1 : 0;
 
       final response = await _api.put(

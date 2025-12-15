@@ -8,6 +8,7 @@ import '../../controllers/product_controller.dart';
 import '../../controllers/cart_controller.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/firestore_image_widget.dart';
 import '../../utils/helpers.dart';
 
 /// Product Detail Screen
@@ -389,7 +390,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final product = context.read<ProductController>().selectedProduct;
     if (product == null) return _buildPlaceholder();
     
-    // PRIORITY: Use Firebase Storage URL (imageUrl) first, fallback to Base64 (legacy)
+    // Priority 1: Firestore Base64 image
+    if (product.firestoreImageId != null && product.firestoreImageId!.isNotEmpty) {
+      return FirestoreImageWidget(
+        firestoreImageId: product.firestoreImageId,
+        imageBase64: product.imageBase64, // Fallback
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: _buildPlaceholder(),
+        errorWidget: _buildPlaceholder(),
+      );
+    }
+    
+    // Priority 2: Legacy Firebase Storage URL
     if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: product.imageUrl!,
@@ -409,7 +423,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       );
     }
     
-    // Legacy: Base64 fallback for old products
+    // Priority 3: Legacy Base64 from MySQL
     if (product.imageBase64 != null && product.imageBase64!.isNotEmpty) {
       try {
         return Image.memory(

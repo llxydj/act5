@@ -13,6 +13,7 @@ import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_date_picker.dart';
 import '../../utils/validators.dart';
 import '../../utils/helpers.dart';
+import '../../utils/image_compressor.dart';
 
 /// Add Product Screen
 class AddProductScreen extends StatefulWidget {
@@ -29,8 +30,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
   String? _selectedCategoryId;
-  String? _imageBase64; // Legacy support
-  String? _imageUrl; // Firebase Storage URL
+  String? _imageBase64; // Compressed Base64 for preview
+  String? _firestoreImageId; // Firestore document ID
   File? _imageFile;
   DateTime? _saleEndDate;
   final StorageService _storageService = StorageService();
@@ -54,17 +55,28 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 80,
     );
 
     if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-        _imageBase64 = null; // Clear base64 when using Firebase Storage
-        _imageUrl = null; // Will be set after upload
-      });
+      try {
+        // Compress image immediately for preview
+        final compressedBase64 = await ImageCompressor.compressImageToBase64(
+          File(pickedFile.path),
+        );
+        
+        setState(() {
+          _imageFile = File(pickedFile.path);
+          _imageBase64 = compressedBase64; // For preview
+          _firestoreImageId = null; // Will be set after upload
+        });
+      } catch (e) {
+        if (!mounted) return;
+        Helpers.showSnackBar(
+          context,
+          'Failed to process image: ${e.toString()}',
+          isError: true,
+        );
+      }
     }
   }
 
@@ -73,15 +85,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     // Show loading indicator
     if (!mounted) return;
-    Helpers.showSnackBar(context, 'Uploading image...', isSuccess: false);
+    Helpers.showSnackBar(context, 'Uploading image to Firestore...', isSuccess: false);
 
-    String? imageUrl = _imageUrl;
+    String? firestoreImageId = _firestoreImageId;
 
-    // Upload image to Firebase Storage if image file is selected
-    if (_imageFile != null && imageUrl == null) {
+    // Upload image to Firestore if image file is selected
+    if (_imageFile != null && firestoreImageId == null) {
       try {
-        imageUrl = await _storageService.uploadProductImage(_imageFile!);
-        if (imageUrl == null) {
+        firestoreImageId = await _storageService.uploadProductImage(_imageFile!);
+        if (firestoreImageId == null) {
           if (!mounted) return;
           Helpers.showSnackBar(
             context,
@@ -91,7 +103,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           return;
         }
         setState(() {
-          _imageUrl = imageUrl;
+          _firestoreImageId = firestoreImageId;
         });
       } catch (e) {
         if (!mounted) return;
@@ -104,15 +116,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
     }
 
-    // Add product with Firebase Storage URL (preferred) or Base64 (legacy fallback)
+    // Add product with Firestore image ID
     final success = await context.read<ProductController>().addProduct(
           name: _nameController.text.trim(),
           description: _descriptionController.text.trim(),
           price: double.parse(_priceController.text),
           stockQuantity: int.parse(_stockController.text),
           categoryId: _selectedCategoryId,
-          imageUrl: imageUrl, // Use Firebase Storage URL
-          imageBase64: imageUrl == null ? _imageBase64 : null, // Legacy fallback
+          firestoreImageId: firestoreImageId,
           saleEndDate: _saleEndDate,
         );
 
@@ -175,32 +186,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: AppTheme.softShadow,
                   ),
-                  child: _imageFile != null
+                  child: _imageBase64 != null && _imageBase64!.isNotEmpty
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: Image.file(
-                            _imageFile!,
+                          child: Image.memory(
+                            base64Decode(_imageBase64!),
                             fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
                           ),
                         )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate_outlined,
-                              size: 48,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tap to add image',
-                              style: TextStyle(
-                                color: Colors.grey.shade500,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
+                      : _buildImagePlaceholder(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -310,6 +305,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_photo_alternate_outlined,
+          size: 48,
+          color: Colors.grey.shade400,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tap to add image',
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 14,
+          ),
+        ),
+      ],
     );
   }
 }

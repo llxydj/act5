@@ -5,12 +5,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../controllers/product_controller.dart';
+import '../../services/storage_service.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/loading_widget.dart';
 import '../../utils/validators.dart';
 import '../../utils/helpers.dart';
+import '../../utils/image_compressor.dart';
 
 /// Edit Product Screen
 class EditProductScreen extends StatefulWidget {
@@ -29,10 +31,12 @@ class _EditProductScreenState extends State<EditProductScreen> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
   String? _selectedCategoryId;
-  String? _imageBase64;
+  String? _imageBase64; // For preview
+  String? _firestoreImageId; // Firestore document ID
   File? _imageFile;
   bool _isActive = true;
   bool _isLoading = true;
+  final StorageService _storageService = StorageService();
 
   @override
   void initState() {
@@ -53,8 +57,21 @@ class _EditProductScreenState extends State<EditProductScreen> {
         _priceController.text = product.price.toString();
         _stockController.text = product.stockQuantity.toString();
         _selectedCategoryId = product.categoryId;
-        _imageBase64 = product.imageBase64;
+        _firestoreImageId = product.firestoreImageId;
+        _imageBase64 = product.imageBase64; // Legacy fallback
         _isActive = product.isActive;
+        
+        // If we have Firestore image ID, fetch the Base64 for preview
+        if (_firestoreImageId != null && _firestoreImageId!.isNotEmpty) {
+          try {
+            final base64 = await _storageService.getProductImageBase64(_firestoreImageId!);
+            if (base64 != null) {
+              _imageBase64 = base64;
+            }
+          } catch (e) {
+            print('Failed to load image from Firestore: $e');
+          }
+        }
         _isLoading = false;
       });
     } else {
@@ -75,22 +92,67 @@ class _EditProductScreenState extends State<EditProductScreen> {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 80,
     );
 
     if (pickedFile != null) {
-      final bytes = await pickedFile.readAsBytes();
-      setState(() {
-        _imageFile = File(pickedFile.path);
-        _imageBase64 = base64Encode(bytes);
-      });
+      try {
+        // Compress image immediately for preview
+        final compressedBase64 = await ImageCompressor.compressImageToBase64(
+          File(pickedFile.path),
+        );
+        
+        setState(() {
+          _imageFile = File(pickedFile.path);
+          _imageBase64 = compressedBase64; // For preview
+          _firestoreImageId = null; // Will be updated after upload
+        });
+      } catch (e) {
+        if (!mounted) return;
+        Helpers.showSnackBar(
+          context,
+          'Failed to process image: ${e.toString()}',
+          isError: true,
+        );
+      }
     }
   }
 
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Upload new image to Firestore if image file is selected
+    String? firestoreImageId = _firestoreImageId;
+    if (_imageFile != null) {
+      if (!mounted) return;
+      Helpers.showSnackBar(context, 'Uploading image to Firestore...', isSuccess: false);
+      
+      try {
+        if (firestoreImageId != null && firestoreImageId.isNotEmpty) {
+          // Update existing image
+          await _storageService.updateProductImage(firestoreImageId, _imageFile!);
+        } else {
+          // Upload new image
+          firestoreImageId = await _storageService.uploadProductImage(_imageFile!);
+          if (firestoreImageId == null) {
+            if (!mounted) return;
+            Helpers.showSnackBar(
+              context,
+              'Failed to upload image',
+              isError: true,
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        if (!mounted) return;
+        Helpers.showSnackBar(
+          context,
+          'Failed to upload image: ${e.toString()}',
+          isError: true,
+        );
+        return;
+      }
+    }
 
     final success = await context.read<ProductController>().updateProduct(
           productId: widget.productId,
@@ -99,7 +161,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
           price: double.parse(_priceController.text),
           stockQuantity: int.parse(_stockController.text),
           categoryId: _selectedCategoryId,
-          imageBase64: _imageBase64,
+          firestoreImageId: firestoreImageId,
           isActive: _isActive,
         );
 
@@ -174,25 +236,16 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: AppTheme.softShadow,
                   ),
-                  child: _imageFile != null
+                  child: _imageBase64 != null && _imageBase64!.isNotEmpty
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: Image.file(
-                            _imageFile!,
+                          child: Image.memory(
+                            base64Decode(_imageBase64!),
                             fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
                           ),
                         )
-                      : _imageBase64 != null && _imageBase64!.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Image.memory(
-                                base64Decode(_imageBase64!),
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildImagePlaceholder(),
-                              ),
-                            )
-                          : _buildImagePlaceholder(),
+                      : _buildImagePlaceholder(),
                 ),
               ),
               const SizedBox(height: 24),

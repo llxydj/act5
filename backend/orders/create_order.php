@@ -44,7 +44,7 @@ try {
     
     foreach ($data['items'] as $item) {
         // Get product details including price and seller
-        $productQuery = "SELECT id, seller_id, name, price, stock_quantity, image_base64, image_url 
+        $productQuery = "SELECT id, seller_id, name, price, stock_quantity, image_base64, image_url, firestore_image_id 
                         FROM products WHERE id = :product_id AND is_active = 1";
         $productStmt = $db->prepare($productQuery);
         $productStmt->bindParam(":product_id", $item['product_id']);
@@ -75,10 +75,14 @@ try {
         // Override client-provided price with server-side price
         $item['price'] = $serverPrice;
         $item['product_name'] = $product['name'];
-        // Use image_url if available, otherwise fall back to image_base64
-        if (empty($item['image_base64']) && !empty($product['image_url'])) {
+        // Priority: Use firestore_image_id if available, then image_url, then image_base64
+        if (empty($item['firestore_image_id']) && !empty($product['firestore_image_id'])) {
+            $item['firestore_image_id'] = $product['firestore_image_id'];
+        }
+        if (empty($item['image_url']) && !empty($product['image_url'])) {
             $item['image_url'] = $product['image_url'];
-        } elseif (empty($item['image_base64']) && !empty($product['image_base64'])) {
+        }
+        if (empty($item['image_base64']) && !empty($product['image_base64'])) {
             $item['image_base64'] = $product['image_base64'];
         }
         
@@ -124,9 +128,9 @@ try {
 
         // Insert order items
         foreach ($items as $item) {
-            // Support both image_url and image_base64 for backward compatibility
-            $itemQuery = "INSERT INTO order_items (order_id, product_id, product_name, price, quantity, image_base64, image_url) 
-                          VALUES (:order_id, :product_id, :product_name, :price, :quantity, :image_base64, :image_url)";
+            // Support firestore_image_id (preferred), image_url, and image_base64 for backward compatibility
+            $itemQuery = "INSERT INTO order_items (order_id, product_id, product_name, price, quantity, image_base64, image_url, firestore_image_id) 
+                          VALUES (:order_id, :product_id, :product_name, :price, :quantity, :image_base64, :image_url, :firestore_image_id)";
             
             $itemStmt = $db->prepare($itemQuery);
             
@@ -137,6 +141,7 @@ try {
             $quantity = (int) $item['quantity'];
             $image_base64 = isset($item['image_base64']) ? $item['image_base64'] : null;
             $image_url = isset($item['image_url']) ? sanitize($item['image_url']) : null;
+            $firestore_image_id = isset($item['firestore_image_id']) && !empty($item['firestore_image_id']) ? sanitize($item['firestore_image_id']) : null;
             
             $itemStmt->bindParam(":order_id", $orderId);
             $itemStmt->bindParam(":product_id", $product_id);
@@ -145,6 +150,7 @@ try {
             $itemStmt->bindParam(":quantity", $quantity);
             $itemStmt->bindParam(":image_base64", $image_base64);
             $itemStmt->bindParam(":image_url", $image_url);
+            $itemStmt->bindParam(":firestore_image_id", $firestore_image_id);
             
             if (!$itemStmt->execute()) {
                 $db->rollBack();

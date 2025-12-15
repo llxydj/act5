@@ -7,8 +7,9 @@ class CartItem {
   final String productName;
   final double price;
   final int quantity;
-  final String? imageBase64;
-  final String? imageUrl;
+  final String? imageBase64; // Legacy support
+  final String? imageUrl; // Legacy support
+  final String? firestoreImageId; // Firestore document ID
   final int stockQuantity;
 
   CartItem({
@@ -19,6 +20,7 @@ class CartItem {
     required this.quantity,
     this.imageBase64,
     this.imageUrl,
+    this.firestoreImageId,
     required this.stockQuantity,
   });
 
@@ -31,6 +33,7 @@ class CartItem {
       quantity: quantity,
       imageBase64: product.imageBase64,
       imageUrl: product.imageUrl,
+      firestoreImageId: product.firestoreImageId,
       stockQuantity: product.stockQuantity,
     );
   }
@@ -44,6 +47,7 @@ class CartItem {
       quantity: int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
       imageBase64: json['image_base64'],
       imageUrl: json['image_url'],
+      firestoreImageId: json['firestore_image_id']?.toString(),
       stockQuantity: int.tryParse(json['stock_quantity']?.toString() ?? '0') ?? 0,
     );
   }
@@ -57,6 +61,7 @@ class CartItem {
       'quantity': quantity,
       'image_base64': imageBase64,
       'image_url': imageUrl,
+      'firestore_image_id': firestoreImageId,
       'stock_quantity': stockQuantity,
     };
   }
@@ -69,6 +74,7 @@ class CartItem {
     int? quantity,
     String? imageBase64,
     String? imageUrl,
+    String? firestoreImageId,
     int? stockQuantity,
   }) {
     return CartItem(
@@ -79,6 +85,7 @@ class CartItem {
       quantity: quantity ?? this.quantity,
       imageBase64: imageBase64 ?? this.imageBase64,
       imageUrl: imageUrl ?? this.imageUrl,
+      firestoreImageId: firestoreImageId ?? this.firestoreImageId,
       stockQuantity: stockQuantity ?? this.stockQuantity,
     );
   }

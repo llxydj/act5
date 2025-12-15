@@ -48,15 +48,15 @@ try {
     $updates = [];
     $params = [':id' => $productId];
     
-    // Support both image_url (Firebase Storage) and image_base64 (legacy)
-    $allowedFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'image_base64', 'image_url', 'is_active'];
+    // Support firestore_image_id (Firestore Base64), image_url (Firebase Storage), and image_base64 (legacy)
+    $allowedFields = ['name', 'description', 'price', 'stock_quantity', 'category_id', 'image_base64', 'image_url', 'firestore_image_id', 'is_active'];
     
     foreach ($allowedFields as $field) {
         if (isset($data[$field])) {
             $updates[] = "$field = :$field";
             if ($field === 'image_base64') {
                 $params[":$field"] = $data[$field];
-            } elseif ($field === 'image_url') {
+            } elseif ($field === 'image_url' || $field === 'firestore_image_id') {
                 $params[":$field"] = sanitize($data[$field]);
             } elseif ($field === 'price') {
                 $params[":$field"] = (float) $data[$field];

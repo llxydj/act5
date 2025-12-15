@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../config/theme.dart';
 import '../models/product_model.dart';
+import 'firestore_image_widget.dart';
 
 /// Product Card Widget
 class ProductCard extends StatelessWidget {
@@ -148,6 +149,32 @@ class ProductCard extends StatelessWidget {
   }
 
   Widget _buildProductImage() {
+    // Priority 1: Firestore Base64 image
+    if (product.firestoreImageId != null && product.firestoreImageId!.isNotEmpty) {
+      return FirestoreImageWidget(
+        firestoreImageId: product.firestoreImageId,
+        imageBase64: product.imageBase64, // Fallback
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: _buildPlaceholder(),
+        errorWidget: _buildPlaceholder(),
+      );
+    }
+    
+    // Priority 2: Legacy Firebase Storage URL
+    if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: product.imageUrl!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: (context, url) => _buildPlaceholder(),
+        errorWidget: (context, url, error) => _buildPlaceholder(),
+      );
+    }
+    
+    // Priority 3: Legacy Base64 from MySQL
     if (product.imageBase64 != null && product.imageBase64!.isNotEmpty) {
       try {
         return Image.memory(
@@ -161,6 +188,7 @@ class ProductCard extends StatelessWidget {
         return _buildPlaceholder();
       }
     }
+    
     return _buildPlaceholder();
   }
 
@@ -293,7 +321,20 @@ class ProductListItem extends StatelessWidget {
   }
 
   Widget _buildProductImage() {
-    // PRIORITY: Use Firebase Storage URL (imageUrl) first, fallback to Base64 (legacy)
+    // Priority 1: Firestore Base64 image
+    if (product.firestoreImageId != null && product.firestoreImageId!.isNotEmpty) {
+      return FirestoreImageWidget(
+        firestoreImageId: product.firestoreImageId,
+        imageBase64: product.imageBase64, // Fallback
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        placeholder: _buildPlaceholder(),
+        errorWidget: _buildPlaceholder(),
+      );
+    }
+    
+    // Priority 2: Legacy Firebase Storage URL
     if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: product.imageUrl!,
@@ -313,7 +354,7 @@ class ProductListItem extends StatelessWidget {
       );
     }
     
-    // Legacy: Base64 fallback for old products
+    // Priority 3: Legacy Base64 from MySQL
     if (product.imageBase64 != null && product.imageBase64!.isNotEmpty) {
       try {
         return Image.memory(

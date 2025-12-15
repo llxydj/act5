@@ -9,8 +9,9 @@ class ProductModel {
   final int stockQuantity;
   final String? categoryId;
   final String? categoryName;
-  final String? imageBase64;
-  final String? imageUrl;
+  final String? imageBase64; // Legacy support - Base64 from MySQL
+  final String? imageUrl; // Legacy support - Firebase Storage URL
+  final String? firestoreImageId; // Firestore document ID for Base64 image
   final bool isActive;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -27,6 +28,7 @@ class ProductModel {
     this.categoryName,
     this.imageBase64,
     this.imageUrl,
+    this.firestoreImageId,
     this.isActive = true,
     required this.createdAt,
     this.updatedAt,
@@ -45,6 +47,7 @@ class ProductModel {
       categoryName: json['category_name'],
       imageBase64: json['image_base64'],
       imageUrl: json['image_url'],
+      firestoreImageId: json['firestore_image_id']?.toString(),
       isActive: json['is_active'] == 1 || json['is_active'] == true,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -68,6 +71,7 @@ class ProductModel {
       'category_name': categoryName,
       'image_base64': imageBase64,
       'image_url': imageUrl,
+      'firestore_image_id': firestoreImageId,
       'is_active': isActive ? 1 : 0,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
@@ -86,6 +90,7 @@ class ProductModel {
     String? categoryName,
     String? imageBase64,
     String? imageUrl,
+    String? firestoreImageId,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -102,6 +107,7 @@ class ProductModel {
       categoryName: categoryName ?? this.categoryName,
       imageBase64: imageBase64 ?? this.imageBase64,
       imageUrl: imageUrl ?? this.imageUrl,
+      firestoreImageId: firestoreImageId ?? this.firestoreImageId,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

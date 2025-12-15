@@ -135,6 +135,7 @@ class ProductController extends ChangeNotifier {
     String? categoryId,
     String? imageBase64,
     String? imageUrl,
+    String? firestoreImageId,
     DateTime? saleEndDate,
   }) async {
     _isLoading = true;
@@ -149,6 +150,7 @@ class ProductController extends ChangeNotifier {
       categoryId: categoryId,
       imageBase64: imageBase64,
       imageUrl: imageUrl,
+      firestoreImageId: firestoreImageId,
       saleEndDate: saleEndDate,
     );
 
@@ -174,6 +176,7 @@ class ProductController extends ChangeNotifier {
     int? stockQuantity,
     String? categoryId,
     String? imageBase64,
+    String? firestoreImageId,
     bool? isActive,
   }) async {
     _isLoading = true;
@@ -188,6 +191,7 @@ class ProductController extends ChangeNotifier {
       stockQuantity: stockQuantity,
       categoryId: categoryId,
       imageBase64: imageBase64,
+      firestoreImageId: firestoreImageId,
       isActive: isActive,
     );
 
@@ -204,6 +208,7 @@ class ProductController extends ChangeNotifier {
           stockQuantity: stockQuantity,
           categoryId: categoryId,
           imageBase64: imageBase64,
+          firestoreImageId: firestoreImageId,
           isActive: isActive,
         );
       }
