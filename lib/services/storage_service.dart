@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_image_service.dart';
@@ -14,37 +13,10 @@ class StorageService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirestoreImageService _firestoreImageService = FirestoreImageService();
 
-  /// Upload product image to Firestore as Base64
-  /// Returns the Firestore document ID
-  Future<String?> uploadProductImage(File imageFile, {String? productId}) async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
-      }
-
-      // Compress and convert to Base64
-      final base64String = await ImageCompressor.compressImageToBase64(imageFile);
-
-      // Upload to Firestore
-      final documentId = await _firestoreImageService.uploadImageBase64(
-        base64String,
-        productId: productId,
-      );
-
-      return documentId;
-    } catch (e) {
-      throw Exception('Failed to upload image: ${e.toString()}');
-    }
-  }
-
   /// Upload product image from bytes to Firestore as Base64
   /// Returns the Firestore document ID
-  Future<String?> uploadProductImageFromBytes(
-    List<int> imageBytes,
-    String fileName, {
-    String? productId,
-  }) async {
+  /// Works on ALL platforms (Web, iOS, Android)
+  Future<String?> uploadProductImageBytes(Uint8List imageBytes, {String? productId}) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -52,9 +24,7 @@ class StorageService {
       }
 
       // Compress and convert to Base64
-      final base64String = await ImageCompressor.compressImageBytesToBase64(
-        Uint8List.fromList(imageBytes),
-      );
+      final base64String = await ImageCompressor.compressImageToBase64(imageBytes);
 
       // Upload to Firestore
       final documentId = await _firestoreImageService.uploadImageBase64(
@@ -77,8 +47,9 @@ class StorageService {
     }
   }
 
-  /// Update product image in Firestore
-  Future<void> updateProductImage(String firestoreImageId, File imageFile) async {
+  /// Update product image in Firestore from bytes
+  /// Works on ALL platforms (Web, iOS, Android)
+  Future<void> updateProductImageBytes(String firestoreImageId, Uint8List imageBytes) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -86,7 +57,7 @@ class StorageService {
       }
 
       // Compress and convert to Base64
-      final base64String = await ImageCompressor.compressImageToBase64(imageFile);
+      final base64String = await ImageCompressor.compressImageToBase64(imageBytes);
 
       // Update in Firestore
       await _firestoreImageService.updateImageBase64(firestoreImageId, base64String);
@@ -105,4 +76,3 @@ class StorageService {
     }
   }
 }
-

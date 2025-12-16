@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -32,7 +32,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   String? _selectedCategoryId;
   String? _imageBase64; // Compressed Base64 for preview
   String? _firestoreImageId; // Firestore document ID
-  File? _imageFile;
+  Uint8List? _imageBytes; // Changed from File to Uint8List
   DateTime? _saleEndDate;
   final StorageService _storageService = StorageService();
 
@@ -59,13 +59,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     if (pickedFile != null) {
       try {
+        // Read image as bytes (works on ALL platforms including web)
+        final imageBytes = await pickedFile.readAsBytes();
+        
         // Compress image immediately for preview
-        final compressedBase64 = await ImageCompressor.compressImageToBase64(
-          File(pickedFile.path),
-        );
+        final compressedBase64 = await ImageCompressor.compressImageToBase64(imageBytes);
         
         setState(() {
-          _imageFile = File(pickedFile.path);
+          _imageBytes = imageBytes; // Store bytes instead of File
           _imageBase64 = compressedBase64; // For preview
           _firestoreImageId = null; // Will be set after upload
         });
@@ -89,10 +90,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     String? firestoreImageId = _firestoreImageId;
 
-    // Upload image to Firestore if image file is selected
-    if (_imageFile != null && firestoreImageId == null) {
+    // Upload image to Firestore if image bytes are selected
+    if (_imageBytes != null && firestoreImageId == null) {
       try {
-        firestoreImageId = await _storageService.uploadProductImage(_imageFile!);
+        firestoreImageId = await _storageService.uploadProductImageBytes(_imageBytes!);
         if (firestoreImageId == null) {
           if (!mounted) return;
           Helpers.showSnackBar(
@@ -329,4 +330,3 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 }
-

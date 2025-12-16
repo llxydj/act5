@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +33,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   String? _selectedCategoryId;
   String? _imageBase64; // For preview
   String? _firestoreImageId; // Firestore document ID
-  File? _imageFile;
+  Uint8List? _imageBytes; // Changed from File to Uint8List
   bool _isActive = true;
   bool _isLoading = true;
   final StorageService _storageService = StorageService();
@@ -98,13 +98,14 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
     if (pickedFile != null) {
       try {
+        // Read image as bytes (works on ALL platforms including web)
+        final imageBytes = await pickedFile.readAsBytes();
+        
         // Compress image immediately for preview
-        final compressedBase64 = await ImageCompressor.compressImageToBase64(
-          File(pickedFile.path),
-        );
+        final compressedBase64 = await ImageCompressor.compressImageToBase64(imageBytes);
         
         setState(() {
-          _imageFile = File(pickedFile.path);
+          _imageBytes = imageBytes; // Store bytes instead of File
           _imageBase64 = compressedBase64; // For preview
           _firestoreImageId = null; // Will be updated after upload
         });
@@ -122,19 +123,19 @@ class _EditProductScreenState extends State<EditProductScreen> {
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Upload new image to Firestore if image file is selected
+    // Upload new image to Firestore if image bytes are selected
     String? firestoreImageId = _firestoreImageId;
-    if (_imageFile != null) {
+    if (_imageBytes != null) {
       if (!mounted) return;
       Helpers.showSnackBar(context, 'Uploading image to Firestore...', isSuccess: false);
       
       try {
         if (firestoreImageId != null && firestoreImageId.isNotEmpty) {
           // Update existing image
-          await _storageService.updateProductImage(firestoreImageId, _imageFile!);
+          await _storageService.updateProductImageBytes(firestoreImageId, _imageBytes!);
         } else {
           // Upload new image
-          firestoreImageId = await _storageService.uploadProductImage(_imageFile!);
+          firestoreImageId = await _storageService.uploadProductImageBytes(_imageBytes!);
           if (firestoreImageId == null) {
             if (!mounted) return;
             Helpers.showSnackBar(
@@ -415,4 +416,3 @@ class _EditProductScreenState extends State<EditProductScreen> {
     );
   }
 }
-
